@@ -35,11 +35,16 @@ class BaseAgent(ABC):
     def __init__(self, name: str) -> None:
         self.name = name
         self.color = AGENT_COLORS.get(name, "white")
-        self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-        self.model = os.getenv("MODEL_NAME", "claude-sonnet-4-20250514")
-        self.max_tokens = int(os.getenv("MAX_TOKENS", "8096"))
         self.total_input_tokens = 0
         self.total_output_tokens = 0
+
+    def _get_client(self) -> anthropic.Anthropic:
+        """Get an Anthropic client using the current API key from env.
+
+        Reads the key at call time so it works when the key is set
+        after import (e.g., Streamlit Cloud secrets).
+        """
+        return anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
 
     def log(self, message: str) -> None:
         """Log a message with the agent's assigned color."""
@@ -69,9 +74,12 @@ class BaseAgent(ABC):
                     time.sleep(wait)
 
                 self.log("Calling LLM...")
-                response = self.client.messages.create(
-                    model=self.model,
-                    max_tokens=self.max_tokens,
+                client = self._get_client()
+                model = os.getenv("MODEL_NAME", "claude-sonnet-4-20250514")
+                max_tokens = int(os.getenv("MAX_TOKENS", "8096"))
+                response = client.messages.create(
+                    model=model,
+                    max_tokens=max_tokens,
                     system=system_prompt,
                     messages=[{"role": "user", "content": user_message}],
                 )
