@@ -55,18 +55,19 @@ def main() -> None:
     with st.sidebar:
         st.markdown("## ⚙️ Configuration")
 
-        # Check for Streamlit secrets first (for Streamlit Cloud deployment)
-        default_key = ""
-        if hasattr(st, "secrets") and "ANTHROPIC_API_KEY" in st.secrets:
-            default_key = st.secrets["ANTHROPIC_API_KEY"]
+        # Use secret key silently if available — never expose it in the UI
+        has_secret_key = hasattr(st, "secrets") and "ANTHROPIC_API_KEY" in st.secrets
 
-        api_key = st.text_input(
-            "Anthropic API Key",
-            value=default_key,
-            type="password",
-            placeholder="sk-ant-...",
-            help="Your Anthropic API key. Never stored — only used for this session.",
-        )
+        if has_secret_key:
+            api_key = st.secrets["ANTHROPIC_API_KEY"]
+            st.success("API key configured", icon="🔑")
+        else:
+            api_key = st.text_input(
+                "Anthropic API Key",
+                type="password",
+                placeholder="sk-ant-...",
+                help="Your Anthropic API key. Never stored — only used for this session.",
+            )
 
         st.markdown("---")
         st.markdown("## 📋 Example Tasks")
